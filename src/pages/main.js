@@ -9,52 +9,6 @@ import {
 import api from '../services/api';
 
 // import { Container } from './styles';
-
-export default class Main extends Component {
-  static navigationOptions = {
-    title: 'MobileHunt',
-  };
-
-  state = {
-    docs: [],
-  };
-
-  componentDidMount() {
-    this.loadProducts();
-  }
-
-  loadProducts = async () => {
-    const response = await api.get('/products');
-
-    const { docs } = response.data;
-    this.setState({ docs });
-  };
-
-  renderItem = ({ item }) => (
-    <View style={styles.productContainer}>
-      <Text style={styles.productTitle}>{item.title}</Text>
-      <Text style={styles.productDescription}>{item.description}</Text>
-
-      <TouchableOpacity style={styles.productButton} onPress={() => {}}>
-        <Text style={styles.productButtonText}>Access</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  render() {
-    return (
-      <View style={styles.container}>
-        <FlatList
-          contentContainerStyle={styles.list}
-          data={this.state.docs}
-          keyExtractor={item => item._id}
-          renderItem={this.renderItem}
-        />
-      </View>
-    );
-  }
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -91,7 +45,7 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#008b8b',
+    borderColor: '#000080',
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
@@ -100,7 +54,70 @@ const styles = StyleSheet.create({
 
   productButtonText: {
     fontSize: 16,
-    color: '#008b8b',
+    color: '#000080',
     fontWeight: 'bold',
   },
 });
+
+export default class Main extends Component {
+  static navigationOptions = {
+    title: 'MobileHunt',
+  };
+
+  state = {
+    productInfo: {},
+    docs: [],
+    page: 1,
+  };
+
+  componentDidMount() {
+    this.loadProducts();
+  }
+
+  loadProducts = async (page = 1) => {
+    const response = await api.get(`/products?page=${page}`);
+
+    const { docs, ...productInfo } = response.data;
+    this.setState({
+      docs: [...this.state.docs, ...docs],
+      productInfo,
+      page,
+    });
+  };
+
+  loadMore = () => {
+    const { page, productInfo } = this.state;
+
+    if (page === productInfo.pages) return;
+
+    const pageNumber = page + 1;
+
+    this.loadProducts(pageNumber);
+  };
+
+  renderItem = ({ item }) => (
+    <View style={styles.productContainer}>
+      <Text style={styles.productTitle}>{item.title}</Text>
+      <Text style={styles.productDescription}>{item.description}</Text>
+
+      <TouchableOpacity style={styles.productButton} onPress={() => {}}>
+        <Text style={styles.productButtonText}>Access</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  render() {
+    return (
+      <View style={styles.container}>
+        <FlatList
+          contentContainerStyle={styles.list}
+          data={this.state.docs}
+          keyExtractor={item => item._id}
+          renderItem={this.renderItem}
+          onEndReached={this.loadMore}
+          onEndReachedThreshold={0.1}
+        />
+      </View>
+    );
+  }
+}
