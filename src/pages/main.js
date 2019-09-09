@@ -3,12 +3,13 @@ import {
   View,
   Text,
   FlatList,
-  TouchableHighlight,
+  TouchableOpacity,
   StyleSheet,
 } from 'react-native';
 import api from '../services/api';
 
-// import { Container } from './styles';
+import { Container, Loading } from './styles';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -68,6 +69,8 @@ export default class Main extends Component {
     productInfo: {},
     docs: [],
     page: 1,
+    loading: true,
+    refreshing: false,
   };
 
   componentDidMount() {
@@ -82,6 +85,8 @@ export default class Main extends Component {
       docs: [...this.state.docs, ...docs],
       productInfo,
       page,
+      refreshing: false,
+      loading: false,
     });
   };
 
@@ -95,12 +100,16 @@ export default class Main extends Component {
     this.loadProducts(pageNumber);
   };
 
+  refreshList = () => {
+    this.setState({ refreshing: true, docs: [] }, this.loadProducts);
+  };
+
   renderItem = ({ item }) => (
     <View style={styles.productContainer}>
       <Text style={styles.productTitle}>{item.title}</Text>
       <Text style={styles.productDescription}>{item.description}</Text>
 
-      <TouchableHighlight
+      <TouchableOpacity
         style={styles.productButton}
         onPress={() => {
           this.props.navigation.navigate('Product', {
@@ -109,22 +118,30 @@ export default class Main extends Component {
         }}
       >
         <Text style={styles.productButtonText}>Access</Text>
-      </TouchableHighlight>
+      </TouchableOpacity>
     </View>
   );
 
   render() {
+    const { loading, refreshing, docs } = this.state;
+
     return (
-      <View style={styles.container}>
-        <FlatList
-          contentContainerStyle={styles.list}
-          data={this.state.docs}
-          keyExtractor={item => item._id}
-          renderItem={this.renderItem}
-          onEndReached={this.loadMore}
-          onEndReachedThreshold={0.1}
-        />
-      </View>
+      <Container>
+        {loading ? (
+          <Loading />
+        ) : (
+          <FlatList
+            contentContainerStyle={styles.list}
+            data={docs}
+            keyExtractor={item => item._id}
+            renderItem={this.renderItem}
+            onEndReached={this.loadMore}
+            onEndReachedThreshold={0.1}
+            onRefresh={this.refreshList}
+            refreshing={refreshing}
+          />
+        )}
+      </Container>
     );
   }
 }
